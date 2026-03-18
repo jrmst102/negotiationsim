@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Round {{ round_num }} Briefing — Negotiation Simulation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / <span>{{ scenario.name }}</span> / <span>Round {{ round_num }}</span>
+    </div>
+    <div class="round-indicator">
+        {% for i in range(1, total_rounds + 1) %}
+        <span class="round-dot {% if i == round_num %}active{% elif i < round_num %}completed{% endif %}">{{ i }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="briefing-container">
+    <div class="card">
+        <div class="card-header">
+            <h1>{{ briefing.title if briefing else "Round " ~ round_num ~ " Briefing" }}</h1>
+            <span class="badge badge-info">Round {{ round_num }} of {{ total_rounds }}</span>
+        </div>
+        <div class="card-body briefing-content">
+            {% if briefing %}
+            {% for paragraph in briefing.content.split('\n\n') %}
+            <p>{{ paragraph }}</p>
+            {% endfor %}
+            {% else %}
+            <p>Briefing content not available.</p>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <a href="/attempt/{{ attempt.attempt_id }}/round/{{ round_num }}/negotiate" class="btn btn-primary btn-lg">
+                Proceed to Negotiation →
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

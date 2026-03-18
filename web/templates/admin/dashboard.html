@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard — Negotiation Simulation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">Simulation: {{ sim_id }}</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{{ student_count }}</span>
+        <span class="stat-label">Students</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ attempt_count }}</span>
+        <span class="stat-label">Attempts</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ score_count }}</span>
+        <span class="stat-label">Completed Scores</span>
+    </div>
+</div>
+
+<div class="admin-actions">
+    <h2>Quick Actions</h2>
+    <div class="action-grid">
+        <a href="/admin/scores" class="btn btn-primary">View Scores</a>
+        <a href="/admin/scores/export" class="btn btn-secondary">Export CSV</a>
+        <a href="/admin/users" class="btn btn-secondary">Manage Users</a>
+        <a href="/admin/setup" class="btn btn-secondary">Simulation Setup</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Scenarios</h2>
+    </div>
+    <div class="card-body">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in scenarios %}
+                <tr>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>
+                        <span class="badge {% if s.status == 'ACTIVE' %}badge-success{% else %}badge-default{% endif %}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td>{{ s.description }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

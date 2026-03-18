@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Negotiation Simulation{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if session %}
+    <header class="header">
+        <div class="header-left">
+            <a href="/dashboard" class="logo">Negotiation Sim</a>
+        </div>
+        <nav class="header-nav">
+            {% if session.role == "ADMIN" %}
+            <a href="/admin">Admin</a>
+            <a href="/admin/scores">Scores</a>
+            <a href="/admin/users">Users</a>
+            <a href="/admin/setup">Setup</a>
+            {% else %}
+            <a href="/dashboard">Dashboard</a>
+            {% endif %}
+        </nav>
+        <div class="header-right">
+            <span class="user-info">{{ session.first_name or session.username }}</span>
+            <a href="/logout" class="btn btn-ghost btn-sm">Logout</a>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2026 Dr. Jose Mendoza. All rights reserved.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

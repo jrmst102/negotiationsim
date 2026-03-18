@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Scenarios — Negotiation Simulation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Negotiation Scenarios</h1>
+    <p class="subtitle">Your alias: <strong>{{ alias }}</strong></p>
+</div>
+
+<div class="scenario-grid">
+    {% for scenario in scenarios %}
+    <div class="card scenario-card {% if scenario.status == 'LOCKED' %}locked{% endif %}">
+        {% if scenario.status == 'LOCKED' %}
+        <div class="lock-overlay">
+            <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="m7 11v-4a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span class="badge badge-info">Coming Soon</span>
+        </div>
+        {% endif %}
+
+        <div class="card-header">
+            <h2>{{ scenario.name }}</h2>
+            <span class="badge {% if scenario.student_status == 'Completed' %}badge-success{% elif scenario.student_status == 'In Progress' %}badge-warning{% else %}badge-default{% endif %}">
+                {{ scenario.student_status | default('Not Started') }}
+            </span>
+        </div>
+        <div class="card-body">
+            <p>{{ scenario.description }}</p>
+            {% if scenario.status == 'ACTIVE' %}
+            <div class="scenario-stats">
+                {% if scenario.student_status == 'Completed' %}
+                <div class="stat">
+                    <span class="stat-label">Best Score</span>
+                    <span class="stat-value">{{ "%.1f" | format(scenario.best_score | default(0)) }}</span>
+                </div>
+                {% endif %}
+                <div class="stat">
+                    <span class="stat-label">Attempts</span>
+                    <span class="stat-value">{{ scenario.attempt_count | default(0) }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if scenario.status == 'ACTIVE' %}
+        <div class="card-footer">
+            {% if scenario.student_status == 'In Progress' %}
+            <a href="/attempt/{{ scenario.current_attempt_id }}/round/1" class="btn btn-primary">Continue</a>
+            {% else %}
+            <button class="btn btn-primary" onclick="showModeModal('{{ scenario.id }}')">
+                {% if scenario.student_status == 'Completed' %}Try Again{% else %}Start{% endif %}
+            </button>
+            <a href="/scenario/{{ scenario.id }}/leaderboard" class="btn btn-ghost">Leaderboard</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Mode Selection Modal -->
+<div id="modeModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="closeModeModal()"></div>
+    <div class="modal-content">
+        <h2>Select Mode</h2>
+        <form id="modeForm" method="POST" action="">
+            <div class="mode-options">
+                <label class="mode-option">
+                    <input type="radio" name="mode" value="PRACTICE" checked>
+                    <div class="mode-card">
+                        <h3>Practice</h3>
+                        <p>Scores are recorded but don't count toward the leaderboard.</p>
+                    </div>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="mode" value="GRADED">
+                    <div class="mode-card">
+                        <h3>Graded</h3>
+                        <p>Scores count toward the leaderboard and competitive benchmark.</p>
+                    </div>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="closeModeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Begin Negotiation</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showModeModal(scenarioId) {
+    document.getElementById('modeForm').action = '/scenario/' + scenarioId + '/start';
+    document.getElementById('modeModal').style.display = 'flex';
+}
+function closeModeModal() {
+    document.getElementById('modeModal').style.display = 'none';
+}
+</script>
+{% endblock %}

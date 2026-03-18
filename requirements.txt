@@ -1,0 +1,9 @@
+bcrypt
+boto3
+fastapi
+itsdangerous
+jinja2
+openai
+python-dotenv
+python-multipart
+uvicorn[standard]

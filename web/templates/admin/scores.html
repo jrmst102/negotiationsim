@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Student Scores — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Student Scores</h1>
+    <a href="/admin/scores/export" class="btn btn-secondary">📥 Export CSV</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if students %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Alias</th>
+                    <th>Avg Score</th>
+                    <th>Completed</th>
+                    <th>Total Attempts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ s.first_name }} {{ s.last_name }}</td>
+                    <td>{{ s.username }}</td>
+                    <td>{{ s.alias }}</td>
+                    <td><strong>{{ s.average_score }}</strong></td>
+                    <td>{{ s.completed_count }}</td>
+                    <td>{{ s.attempt_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No students registered yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

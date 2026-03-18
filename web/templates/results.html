@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Final Results{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / {{ scenario.name }} / <span>Results</span>
+    </div>
+    <h1>Attempt Results</h1>
+</div>
+
+{% if score %}
+<!-- Composite Score -->
+<div class="results-hero">
+    <div class="score-circle">
+        <svg viewBox="0 0 120 120" class="score-ring">
+            <circle cx="60" cy="60" r="54" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+            <circle cx="60" cy="60" r="54" stroke="#2563eb" stroke-width="8" fill="none"
+                    stroke-dasharray="{{ (score.composite_score | float / 100 * 339.3) }} 339.3"
+                    stroke-linecap="round"
+                    transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="score-number">{{ "%.1f" | format(score.composite_score | float) }}</div>
+        <div class="score-label">Final Score</div>
+    </div>
+    <div class="score-meta">
+        <p>{{ scenario.name }}</p>
+        <span class="badge {% if attempt.mode == 'GRADED' %}badge-success{% else %}badge-info{% endif %}">
+            {{ attempt.mode }}
+        </span>
+    </div>
+</div>
+
+<!-- Score Breakdown by Component -->
+<div class="card">
+    <div class="card-header">
+        <h2>Score Breakdown</h2>
+    </div>
+    <div class="card-body score-bars">
+        <div class="score-bar-group">
+            <label>Economic Value <small>(40%)</small></label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ score.economic_value }}%"></div></div>
+            <span class="score-value">{{ "%.1f" | format(score.economic_value | float) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Strategic Alignment <small>(30%)</small></label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ score.strategic_alignment }}%"></div></div>
+            <span class="score-value">{{ "%.1f" | format(score.strategic_alignment | float) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Relationship Preservation <small>(20%)</small></label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ score.relationship_preservation }}%"></div></div>
+            <span class="score-value">{{ "%.1f" | format(score.relationship_preservation | float) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Information Management <small>(10%)</small></label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ score.information_management }}%"></div></div>
+            <span class="score-value">{{ "%.1f" | format(score.information_management | float) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Round-by-Round -->
+{% if round_scores %}
+<div class="card">
+    <div class="card-header">
+        <h2>Round-by-Round Scores</h2>
+    </div>
+    <div class="card-body">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Weight</th>
+                    <th>Economic</th>
+                    <th>Strategic</th>
+                    <th>Relationship</th>
+                    <th>Info Mgmt</th>
+                    <th>Composite</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rs in round_scores %}
+                <tr>
+                    <td>Round {{ loop.index }}</td>
+                    <td>{{ [25, 35, 40][loop.index0] }}%</td>
+                    <td>{{ "%.0f" | format(rs.economic_value | default(0) | float) }}</td>
+                    <td>{{ "%.0f" | format(rs.strategic_alignment | default(0) | float) }}</td>
+                    <td>{{ "%.0f" | format(rs.relationship_preservation | default(0) | float) }}</td>
+                    <td>{{ "%.0f" | format(rs.information_management | default(0) | float) }}</td>
+                    <td><strong>{{ "%.1f" | format(rs.composite | default(0) | float) }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-warning">Score data not available yet.</div>
+{% endif %}
+
+<div class="result-actions">
+    <a href="/scenario/{{ attempt.scenario_id }}/leaderboard" class="btn btn-primary">View Leaderboard</a>
+    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}

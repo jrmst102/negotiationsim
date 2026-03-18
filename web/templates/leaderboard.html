@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard — {{ scenario.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / {{ scenario.name }} / <span>Leaderboard</span>
+    </div>
+    <h1>Leaderboard</h1>
+    <p class="subtitle">{{ scenario.name }} — You are <strong>{{ alias }}</strong></p>
+</div>
+
+<div class="tabs">
+    <button class="tab active" onclick="showTab('leaderboard')">Leaderboard</button>
+    <button class="tab" onclick="showTab('myscores')">My Scores</button>
+</div>
+
+<!-- Leaderboard Tab -->
+<div id="tab-leaderboard" class="tab-content active">
+    {% if entries %}
+    <div class="card">
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Alias</th>
+                        <th>Avg Score</th>
+                        <th>Attempts</th>
+                        <th>Percentile</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr class="{% if entry.is_current_user %}highlight-row{% endif %}">
+                        <td>{{ entry.rank }}</td>
+                        <td>
+                            {{ entry.alias }}
+                            {% if entry.is_current_user %}<span class="badge badge-info">You</span>{% endif %}
+                        </td>
+                        <td><strong>{{ entry.average_score }}</strong></td>
+                        <td>{{ entry.attempt_count }}</td>
+                        <td>{{ entry.percentile }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No graded attempts completed yet. Be the first to make the leaderboard!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- My Scores Tab -->
+<div id="tab-myscores" class="tab-content" style="display:none;">
+    {% if my_scores %}
+    <div class="card">
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Score</th>
+                        <th>Economic</th>
+                        <th>Strategic</th>
+                        <th>Relationship</th>
+                        <th>Info Mgmt</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in my_scores %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ s.composite_score }}</strong></td>
+                        <td>{{ s.economic_value }}</td>
+                        <td>{{ s.strategic_alignment }}</td>
+                        <td>{{ s.relationship_preservation }}</td>
+                        <td>{{ s.information_management }}</td>
+                        <td>{{ s.scored_at[:10] if s.scored_at else "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>You haven't completed any attempts yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="result-actions">
+    <a href="/dashboard" class="btn btn-ghost">← Back to Dashboard</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).style.display = 'block';
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

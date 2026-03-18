@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}AI Response — Round {{ round_num }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / {{ scenario.name }} / Round {{ round_num }} / <span>Response</span>
+    </div>
+    <h1>Counterparty Response — Round {{ round_num }}</h1>
+</div>
+
+<!-- Deal Status -->
+<div class="deal-status deal-status-{{ ai_response.deal_status | default('FAR') | lower }}">
+    {% if ai_response.deal_status == "CLOSE" %}
+        ✅ Close to Agreement
+    {% elif ai_response.deal_status == "FAR" %}
+        ⚠️ Far Apart
+    {% elif ai_response.deal_status == "WALKAWAY_RISK" %}
+        🚨 Walkaway Risk
+    {% elif ai_response.deal_status == "WALKAWAY" %}
+        ❌ Walkaway — Deal Collapsed
+    {% else %}
+        {{ ai_response.deal_status | default("Evaluating...") }}
+    {% endif %}
+</div>
+
+<!-- Term-by-Term Evaluation -->
+<div class="card">
+    <div class="card-header">
+        <h2>Term Evaluation</h2>
+    </div>
+    <div class="card-body">
+        <table class="terms-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Your Offer</th>
+                    <th>Status</th>
+                    <th>Counter</th>
+                    <th>Reasoning</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in term_fields %}
+                {% set term_eval = ai_response.terms.get(field.key, {}) if ai_response.terms else {} %}
+                <tr>
+                    <td class="term-name">{{ field.label }}</td>
+                    <td class="term-value">
+                        {{ terms.get(field.key, "—") }}
+                        {% if field.unit %}<small>{{ field.unit }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {% set status = term_eval.get("status", "counter") if term_eval else "counter" %}
+                        <span class="badge {% if status == 'accept' %}badge-success{% elif status == 'counter' %}badge-warning{% else %}badge-error{% endif %}">
+                            {{ status | capitalize }}
+                        </span>
+                    </td>
+                    <td class="term-counter">
+                        {% if term_eval.get("counter_value") is not none and term_eval.get("status") == "counter" %}
+                            {{ term_eval.counter_value }}
+                            {% if field.unit %}<small>{{ field.unit }}</small>{% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="term-reasoning">{{ term_eval.get("reasoning", "") if term_eval else "" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- AI Narrative -->
+<div class="card narrative-card">
+    <div class="card-header">
+        <h2>Victoria Chen's Response</h2>
+    </div>
+    <div class="card-body">
+        <blockquote class="ai-narrative">
+            {% for paragraph in (ai_response.narrative | default("")).split('\n\n') %}
+            {% if paragraph.strip() %}
+            <p>{{ paragraph }}</p>
+            {% endif %}
+            {% endfor %}
+        </blockquote>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="response-actions">
+    {% if ai_response.deal_status == "WALKAWAY" %}
+    <div class="alert alert-error">
+        <strong>The counterparty has walked away from this round.</strong>
+        <p>Your terms have been evaluated up to this point with a penalty. You may proceed to the next round with adjusted terms.</p>
+    </div>
+    <form method="POST" action="/attempt/{{ attempt.attempt_id }}/round/{{ round_num }}/close">
+        <input type="hidden" name="action" value="walkaway">
+        {% if round_num < total_rounds %}
+        <button type="submit" class="btn btn-primary btn-lg">Continue to Round {{ round_num + 1 }} →</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-lg">View Final Results</button>
+        {% endif %}
+    </form>
+    {% else %}
+    <div class="action-buttons">
+        <form method="POST" action="/attempt/{{ attempt.attempt_id }}/round/{{ round_num }}/close" style="display:inline;">
+            <input type="hidden" name="action" value="accept_counter">
+            <button type="submit" class="btn btn-primary">✅ Accept Counter-Offer</button>
+        </form>
+        <form method="POST" action="/attempt/{{ attempt.attempt_id }}/round/{{ round_num }}/close" style="display:inline;">
+            <input type="hidden" name="action" value="lock_in">
+            <button type="submit" class="btn btn-warning">🔒 Lock In My Offer</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Round Score Preview -->
+{% if round_score %}
+<div class="card score-preview">
+    <div class="card-header">
+        <h2>Round {{ round_num }} Score Preview</h2>
+    </div>
+    <div class="card-body score-bars">
+        <div class="score-bar-group">
+            <label>Economic Value (40%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.economic_value | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.economic_value | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Strategic Alignment (30%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.strategic_alignment | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.strategic_alignment | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Relationship Preservation (20%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.relationship_preservation | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.relationship_preservation | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Information Management (10%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.information_management | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.information_management | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group composite">
+            <label>Round Composite</label>
+            <div class="progress-bar"><div class="progress-fill primary" style="width: {{ round_score.composite | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.1f" | format(round_score.composite | default(0)) }}</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

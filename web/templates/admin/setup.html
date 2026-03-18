@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Simulation Setup — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Simulation Setup</h1>
+</div>
+
+<!-- Create New Simulation -->
+<div class="card">
+    <div class="card-header">
+        <h2>Create New Simulation</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/admin/setup/create" class="inline-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sim_name">Simulation Name</label>
+                    <input type="text" id="sim_name" name="sim_name" placeholder="e.g., Spring 2026 Section A" required>
+                </div>
+                <div class="form-group form-action">
+                    <button type="submit" class="btn btn-primary">Create Simulation</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Existing Simulations -->
+<div class="card">
+    <div class="card-header">
+        <h2>Simulations</h2>
+    </div>
+    <div class="card-body">
+        {% if simulations %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in simulations %}
+                <tr>
+                    <td><code>{{ sim.simulation_id }}</code></td>
+                    <td>{{ sim.name }}</td>
+                    <td>
+                        <span class="badge {% if sim.status == 'STARTED' %}badge-success{% elif sim.status == 'CREATED' %}badge-warning{% else %}badge-default{% endif %}">
+                            {{ sim.status }}
+                        </span>
+                    </td>
+                    <td>{{ sim.created_at[:10] if sim.created_at else "—" }}</td>
+                    <td>
+                        {% if sim.status == 'CREATED' %}
+                        <form method="POST" action="/admin/setup/start/{{ sim.simulation_id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-primary">Start</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No simulations created yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
