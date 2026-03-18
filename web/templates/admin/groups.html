@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Groups — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Manage Groups</h1>
+    <p class="subtitle">Assign students to groups for class sessions</p>
+</div>
+
+<!-- Create Group -->
+<div class="card">
+    <div class="card-header">
+        <h2>Create Group</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/admin/groups/create" class="inline-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Group Name</label>
+                    <input type="text" id="name" name="name" required placeholder="e.g. Team Alpha">
+                </div>
+                <div class="form-group">
+                    <label for="scenario_id">Scenario</label>
+                    <select id="scenario_id" name="scenario_id" required>
+                        {% for s in scenarios %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group form-action">
+                    <button type="submit" class="btn btn-primary">Create Group</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Auto-Assign -->
+<div class="card">
+    <div class="card-header">
+        <h2>Auto-Assign Students</h2>
+    </div>
+    <div class="card-body">
+        <p style="margin-bottom:12px;color:#6b7280;font-size:0.9rem;">
+            Automatically create groups and assign all ungrouped students.
+        </p>
+        <form method="POST" action="/admin/groups/auto-assign" class="inline-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="auto_scenario_id">Scenario</label>
+                    <select id="auto_scenario_id" name="scenario_id" required>
+                        {% for s in scenarios %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="group_size">Group Size</label>
+                    <select id="group_size" name="group_size">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4" selected>4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="form-group form-action">
+                    <button type="submit" class="btn btn-secondary">Auto-Assign</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Groups List -->
+{% if groups %}
+{% for group in groups %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>{{ group.name }}
+            <span class="badge badge-default" style="margin-left:8px;">{{ group.member_count }} members</span>
+        </h2>
+        <form method="POST" action="/admin/groups/{{ group.group_id }}/delete"
+              onsubmit="return confirm('Delete this group?')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+    </div>
+    <div class="card-body">
+        <!-- Members Table -->
+        {% if group.members %}
+        <table class="data-table" style="margin-bottom:16px;">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in group.members %}
+                <tr>
+                    <td>{{ m.first_name }} {{ m.last_name }} ({{ m.username }})</td>
+                    <td>
+                        {% if m.is_lead == "true" %}
+                        <span class="badge badge-warning">Lead</span>
+                        {% else %}
+                        <span class="badge badge-default">Member</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if m.is_lead != "true" %}
+                        <form method="POST" action="/admin/groups/{{ group.group_id }}/lead/{{ m.user_id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-ghost btn-sm">Make Lead</button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="/admin/groups/{{ group.group_id }}/members/{{ m.user_id }}/remove" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#6b7280;font-size:0.9rem;">No members yet.</p>
+        {% endif %}
+
+        <!-- Add Member -->
+        <form method="POST" action="/admin/groups/{{ group.group_id }}/members/add" class="inline-form">
+            <div class="form-row" style="align-items:flex-end;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="member_{{ group.group_id }}">Add Student</label>
+                    <select id="member_{{ group.group_id }}" name="user_id" required>
+                        {% for s in students %}
+                        <option value="{{ s.user_id }}">{{ s.first_name }} {{ s.last_name }} ({{ s.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Add</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <p style="color:#6b7280;">No groups created yet. Use the form above to create groups or auto-assign students.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

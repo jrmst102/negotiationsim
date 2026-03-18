@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Class Sessions — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Class Sessions</h1>
+    <p class="subtitle">Create and manage instructor-paced negotiation sessions</p>
+</div>
+
+<!-- Create Session -->
+<div class="card">
+    <div class="card-header">
+        <h2>New Session</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/admin/sessions/create" class="inline-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="scenario_id">Scenario</label>
+                    <select id="scenario_id" name="scenario_id" required>
+                        {% for s in scenarios %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="counterpart_mode">Counterpart Mode</label>
+                    <select id="counterpart_mode" name="counterpart_mode">
+                        <option value="ALL_HH">All Human-Human</option>
+                        <option value="ALL_HA" selected>All Human-AI</option>
+                        <option value="MIXED">Mixed (auto-assign)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="round_duration">Round Duration (min)</label>
+                    <select id="round_duration" name="round_duration">
+                        <option value="5">5 min</option>
+                        <option value="10" selected>10 min</option>
+                        <option value="15">15 min</option>
+                        <option value="20">20 min</option>
+                    </select>
+                </div>
+                <div class="form-group form-action">
+                    <button type="submit" class="btn btn-primary">Create Session</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sessions History -->
+<div class="card">
+    <div class="card-header">
+        <h2>Sessions ({{ sessions | length }})</h2>
+    </div>
+    <div class="card-body">
+        {% if sessions %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Scenario</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Round</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td><code>{{ s.session_id[:8] }}</code></td>
+                    <td>{{ s.scenario_id }}</td>
+                    <td><span class="badge badge-info">{{ s.counterpart_mode }}</span></td>
+                    <td>
+                        <span class="badge {% if s.status == 'ACTIVE' %}badge-success{% elif s.status == 'COMPLETED' %}badge-default{% else %}badge-warning{% endif %}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td>{{ s.current_round }}</td>
+                    <td>{{ s.created_at[:16] }}</td>
+                    <td>
+                        {% if s.status == 'DRAFT' %}
+                        <a href="/admin/sessions/{{ s.session_id }}/pairings" class="btn btn-secondary btn-sm">Configure</a>
+                        {% elif s.status == 'ACTIVE' %}
+                        <a href="/admin/sessions/{{ s.session_id }}/control" class="btn btn-primary btn-sm">Control</a>
+                        {% else %}
+                        <a href="/admin/sessions/{{ s.session_id }}/control" class="btn btn-ghost btn-sm">View</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#6b7280;">No sessions created yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

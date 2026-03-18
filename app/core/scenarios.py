@@ -186,3 +186,59 @@ def get_term_fields(scenario_id: str) -> list[TermField]:
 def get_briefing(scenario_id: str, round_number: int) -> dict | None:
     scenario_briefings = ROUND_BRIEFINGS.get(scenario_id, {})
     return scenario_briefings.get(round_number)
+
+
+def get_partner_briefing(scenario_id: str, round_number: int) -> dict | None:
+    """Get the partner role (larger brand) briefing."""
+    scenario_briefings = PARTNER_ROLE_BRIEFINGS.get(scenario_id, {})
+    return scenario_briefings.get(round_number)
+
+
+# ── Partner Role Briefings (larger brand — for HH mode) ──────────────
+
+PARTNER_ROLE_BRIEFINGS = {
+    "brand-partnership": {
+        1: {
+            "title": "Round 1: Opening Negotiations — Partner Role",
+            "content": """You are Victoria Chen, VP of Partnerships at Meridian Corp, a Fortune 500 consumer goods conglomerate with 50,000+ retail locations and 15M+ loyal households. You've been in the industry 18 years and you don't make emotional decisions.
+
+NovaBrand, a fast-growing DTC wellness company, has come to you proposing a co-branding partnership. They bring strong social media presence (2M+ followers) and innovative products that resonate with Gen Z/Millennials — a demographic your brand is losing ground in.
+
+**YOUR OBJECTIVES:**
+- Protect Meridian's brand equity at all costs. Creative control must remain at least "Joint Approval" — you will NOT accept student/NovaBrand having sole creative control.
+- Secure a revenue split of at least 35% for Meridian (i.e., NovaBrand cannot take more than 65%).
+- Push for longer exclusivity (6+ months) — a past open partnership failed badly and the board is watching.
+- Prefer shorter campaign duration (6-12 months) with renewal option rather than long lock-ins.
+- Be skeptical of performance benchmarks above 30% CAC reduction — you think they're unrealistic.
+
+**SCORING:** You will be evaluated on Brand Protection (40%), Deal Economics (30%), Strategic Value (20%), and Counterpart Management (10%). Protect your brand, secure favorable economics, and try to learn what NovaBrand's real priorities are without revealing yours.
+
+This is your opening response. Test the waters, counter most terms, and establish your negotiating position.""",
+        },
+        2: {
+            "title": "Round 2: Market Developments — Partner Role",
+            "content": """New market intelligence has emerged since Round 1.
+
+A competitor startup, FreshStart Labs, announced a partnership with another retailer with a 55/45 split favoring the startup and a 6-month exclusivity window. This sets a market benchmark that could pressure you.
+
+Your Q3 earnings showed a 12% decline in the wellness category — your board is pressuring you to show growth. The NovaBrand partnership is becoming more important, but don't let them know you're feeling pressure.
+
+However, a market research report suggests co-branded campaigns in this space average only a 15% CAC reduction, supporting your position on lower performance benchmarks.
+
+**STRATEGY THIS ROUND:** Get more specific. Push harder on your priorities (exclusivity, creative control). If NovaBrand made concessions in Round 1, reward them slightly. If they were aggressive, push back firmly. Your goal is to extract their real priorities without revealing yours.""",
+        },
+        3: {
+            "title": "Round 3: Final Terms — Partner Role",
+            "content": """This is the final round. The board meeting is in two weeks and you need to present a signed deal or explain why it fell through. The CEO is watching.
+
+You've heard that NovaBrand may have received an approach from GlobalMart. While switching partners would delay things, it means NovaBrand has alternatives. Don't panic — Meridian's scale and credibility are still your strongest cards.
+
+**FINAL ROUND STRATEGY:**
+- Be more flexible on secondary terms but hold firm on brand protection and minimum revenue share.
+- This round carries the most weight (40%) in scoring — push for your best deal while ensuring it gets done.
+- A failed negotiation reflects poorly on both parties. Find the close, but don't capitulate on your red lines.
+
+Remember: your score depends on protecting your brand, securing good economics, advancing Meridian's strategic position, and managing the information flow.""",
+        },
+    }
+}

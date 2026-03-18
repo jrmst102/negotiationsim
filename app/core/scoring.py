@@ -20,22 +20,29 @@ COMPONENT_WEIGHTS = {
     "information_management": 0.10,
 }
 
+# Partner role (larger brand) has a different rubric
+PARTNER_COMPONENT_WEIGHTS = {
+    "brand_protection": 0.40,
+    "deal_economics": 0.30,
+    "strategic_value": 0.20,
+    "counterpart_management": 0.10,
+}
+
 ROUND_WEIGHTS = {1: 0.25, 2: 0.35, 3: 0.40}
 
 
-def compute_round_score(ai_score: dict) -> dict:
+def compute_round_score(ai_score: dict, role: str = "STUDENT_ROLE") -> dict:
     """Given AI-returned component scores (0-100), compute weighted round score.
 
-    ai_score should have keys: economic_value, strategic_alignment,
-    relationship_preservation, information_management (each 0-100).
+    For STUDENT_ROLE: uses economic_value, strategic_alignment, etc.
+    For PARTNER_ROLE: uses brand_protection, deal_economics, etc.
     """
+    weights = PARTNER_COMPONENT_WEIGHTS if role == "PARTNER_ROLE" else COMPONENT_WEIGHTS
     components = {}
-    for key in COMPONENT_WEIGHTS:
+    for key in weights:
         components[key] = float(ai_score.get(key, 0))
 
-    composite = sum(
-        components[k] * COMPONENT_WEIGHTS[k] for k in COMPONENT_WEIGHTS
-    )
+    composite = sum(components[k] * weights[k] for k in weights)
 
     return {
         **components,
@@ -43,19 +50,16 @@ def compute_round_score(ai_score: dict) -> dict:
     }
 
 
-def compute_attempt_score(round_scores: list[dict]) -> dict:
-    """Compute the final attempt score from per-round scores.
-
-    round_scores is a list of dicts (one per round, in order) each containing
-    component scores (0-100) and composite.
-    """
-    final = {k: 0.0 for k in COMPONENT_WEIGHTS}
+def compute_attempt_score(round_scores: list[dict], role: str = "STUDENT_ROLE") -> dict:
+    """Compute the final attempt score from per-round scores."""
+    weights = PARTNER_COMPONENT_WEIGHTS if role == "PARTNER_ROLE" else COMPONENT_WEIGHTS
+    final = {k: 0.0 for k in weights}
     final["composite"] = 0.0
 
     for i, rs in enumerate(round_scores):
         round_num = i + 1
         weight = ROUND_WEIGHTS.get(round_num, 0)
-        for k in COMPONENT_WEIGHTS:
+        for k in weights:
             final[k] += float(rs.get(k, 0)) * weight
         final["composite"] += float(rs.get("composite", 0)) * weight
 
