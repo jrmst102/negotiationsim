@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Negotiate — Round {{ round_num }} — Class Session{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / {{ scenario.name }} / Class Session / Round {{ round_num }}
+    </div>
+    <h1>Submit Your Terms — Round {{ round_num }}</h1>
+    <p class="subtitle">
+        {% if role == "PARTNER_ROLE" %}Seller Role{% else %}Buyer Role{% endif %} &middot;
+        Group: {{ group.name }}
+    </p>
+</div>
+
+{% if remaining_seconds > 0 %}
+<div class="card" style="background:#f0f9ff;border-color:#bfdbfe;margin-bottom:16px;">
+    <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+        <span style="font-size:1.5rem;font-weight:700;color:#2563eb;" id="timer-display">
+            {{ "%d:%02d" | format(remaining_seconds // 60, remaining_seconds % 60) }}
+        </span>
+        <span style="color:#374151;">remaining in this round</span>
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" action="/session/{{ session_id }}/round/{{ round_num }}/submit" class="term-sheet-form">
+    {% set current_section = "" %}
+    {% for field in term_fields %}
+
+    {% if field.section != current_section %}
+        {% if current_section %}
+        </div>
+        {% endif %}
+        {% set current_section = field.section %}
+        <div class="form-section">
+            <h2 class="section-title">{{ field.section }}</h2>
+    {% endif %}
+
+    <div class="form-group">
+        <label for="{{ field.key }}">{{ field.label }}</label>
+
+        {% if field.input_type == "slider" %}
+        <div class="slider-group">
+            <input type="range"
+                   id="{{ field.key }}"
+                   name="{{ field.key }}"
+                   min="{{ field.min_val }}"
+                   max="{{ field.max_val }}"
+                   step="{{ field.step or 1 }}"
+                   value="{{ field.default }}"
+                   oninput="document.getElementById('{{ field.key }}_val').textContent = this.value">
+            <span class="slider-value" id="{{ field.key }}_val">{{ field.default }}</span>
+            <span class="slider-unit">{{ field.unit }}</span>
+        </div>
+        <div class="slider-range">
+            <span>{{ field.min_val }}{{ field.unit }}</span>
+            <span>{{ field.max_val }}{{ field.unit }}</span>
+        </div>
+
+        {% elif field.input_type == "dropdown" %}
+        <select id="{{ field.key }}" name="{{ field.key }}">
+            {% for opt in field.options %}
+            <option value="{{ opt }}" {% if field.default == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
+
+        {% elif field.input_type == "numeric" %}
+        <input type="number"
+               id="{{ field.key }}"
+               name="{{ field.key }}"
+               min="{{ field.min_val }}"
+               max="{{ field.max_val }}"
+               step="{{ field.step or 1 }}"
+               value="{{ field.default }}">
+        {% if field.unit %}
+        <span class="input-unit">{{ field.unit }}</span>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    {% endfor %}
+    </div>
+
+    <div class="form-actions">
+        <a href="/session/{{ session_id }}/round/{{ round_num }}" class="btn btn-ghost">← Back to Briefing</a>
+        <button type="submit" class="btn btn-primary btn-lg">Submit Offer</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if remaining_seconds > 0 %}
+<script>
+(function() {
+    var remaining = {{ remaining_seconds }};
+    var el = document.getElementById('timer-display');
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+    function tick() {
+        remaining--;
+        if (remaining <= 0) { el.textContent = '0:00'; el.style.color = '#ef4444'; return; }
+        el.textContent = fmt(remaining);
+        if (remaining <= 60) el.style.color = '#f59e0b';
+        setTimeout(tick, 1000);
+    }
+    setTimeout(tick, 1000);
+})();
+</script>
+{% endif %}
+{% endblock %}

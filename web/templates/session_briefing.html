@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Round {{ round_num }} Briefing — Class Session{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Round {{ round_num }} of {{ total_rounds }}</h1>
+    <p class="subtitle">
+        {{ scenario.name }} &middot;
+        {% if role == "PARTNER_ROLE" %}Seller Role{% else %}Buyer Role{% endif %} &middot;
+        Group: {{ group.name }}
+    </p>
+</div>
+
+{% if remaining_seconds > 0 %}
+<div class="card" style="background:#f0f9ff;border-color:#bfdbfe;margin-bottom:16px;">
+    <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+        <span style="font-size:1.5rem;font-weight:700;color:#2563eb;" id="timer-display">
+            {{ "%d:%02d" | format(remaining_seconds // 60, remaining_seconds % 60) }}
+        </span>
+        <span style="color:#374151;">remaining in this round</span>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h2>{{ briefing.title if briefing else "Round " ~ round_num ~ " Briefing" }}</h2>
+    </div>
+    <div class="card-body">
+        {% if briefing %}
+        <div class="briefing-content" style="white-space:pre-line;line-height:1.7;">{{ briefing.content }}</div>
+        {% else %}
+        <p style="color:#6b7280;">No briefing available for this round.</p>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        <a href="/session/{{ session_id }}/round/{{ round_num }}/negotiate" class="btn btn-primary btn-lg">
+            Proceed to Negotiation
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if remaining_seconds > 0 %}
+<script>
+(function() {
+    var remaining = {{ remaining_seconds }};
+    var el = document.getElementById('timer-display');
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+    function tick() {
+        remaining--;
+        if (remaining <= 0) { el.textContent = '0:00'; el.style.color = '#ef4444'; return; }
+        el.textContent = fmt(remaining);
+        if (remaining <= 60) el.style.color = '#f59e0b';
+        setTimeout(tick, 1000);
+    }
+    setTimeout(tick, 1000);
+})();
+</script>
+{% endif %}
+{% endblock %}

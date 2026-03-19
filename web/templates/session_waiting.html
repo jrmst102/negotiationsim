@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Waiting — Round {{ round_num }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Round {{ round_num }} — Submitted</h1>
+    <p class="subtitle">
+        {% if role == "PARTNER_ROLE" %}Seller Role{% else %}Buyer Role{% endif %} &middot;
+        Group: {{ group.name }}
+    </p>
+</div>
+
+<div class="card" style="text-align:center;padding:40px;">
+    <div class="card-body">
+        {% if partner_submitted %}
+        <p style="font-size:1.1rem;color:#059669;margin-bottom:16px;">
+            Both sides have submitted! Processing results...
+        </p>
+        <a href="/session/{{ session_id }}/round/{{ round_num }}/response" class="btn btn-primary btn-lg">
+            View Results
+        </a>
+        {% else %}
+        <p style="font-size:1.1rem;color:#6b7280;margin-bottom:8px;">
+            Your offer has been submitted.
+        </p>
+        <p style="font-size:0.95rem;color:#9ca3af;margin-bottom:24px;">
+            Waiting for your counterpart to submit their terms...
+        </p>
+        <div class="spinner" style="margin:24px auto;width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite;"></div>
+
+        {% if remaining_seconds > 0 %}
+        <div style="margin-top:24px;">
+            <span style="font-size:1.3rem;font-weight:700;color:#2563eb;" id="timer-display">
+                {{ "%d:%02d" | format(remaining_seconds // 60, remaining_seconds % 60) }}
+            </span>
+            <span style="color:#6b7280;"> remaining</span>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<script>
+(function() {
+    var sessionId = "{{ session_id }}";
+    var roundNum = {{ round_num }};
+
+    // Poll for partner submission / round advance
+    function poll() {
+        fetch('/session/' + sessionId + '/status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.status === 'COMPLETED') {
+                    window.location.href = '/session/' + sessionId + '/results';
+                    return;
+                }
+                if (data.current_round > roundNum) {
+                    window.location.href = '/session/' + sessionId + '/round/' + data.current_round;
+                    return;
+                }
+            }).catch(function(){});
+
+        // Also try to hit the waiting page to trigger eval check
+        fetch('/session/' + sessionId + '/round/' + roundNum + '/waiting', {redirect: 'follow'})
+            .then(function(r) {
+                if (r.redirected && r.url.indexOf('/response') !== -1) {
+                    window.location.href = r.url;
+                }
+            }).catch(function(){});
+    }
+    setInterval(poll, 5000);
+
+    {% if remaining_seconds > 0 %}
+    var remaining = {{ remaining_seconds }};
+    var el = document.getElementById('timer-display');
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+    function tick() {
+        remaining--;
+        if (remaining <= 0) { el.textContent = '0:00'; el.style.color = '#ef4444'; return; }
+        el.textContent = fmt(remaining);
+        if (remaining <= 60) el.style.color = '#f59e0b';
+        setTimeout(tick, 1000);
+    }
+    setTimeout(tick, 1000);
+    {% endif %}
+})();
+</script>
+{% endblock %}

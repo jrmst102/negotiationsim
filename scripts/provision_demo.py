@@ -100,7 +100,8 @@ def provision_demo() -> bool:
     # Initialize empty data files
     write_csv(DEMO_SIM_ID, "attempts.csv",
               ["attempt_id", "user_id", "scenario_id", "mode", "status",
-               "current_round", "started_at", "completed_at"], [])
+               "current_round", "started_at", "completed_at",
+               "activity_mode", "session_id", "group_id", "counterpart_type", "role"], [])
     write_csv(DEMO_SIM_ID, "rounds.csv",
               ["round_id", "attempt_id", "round_number", "status", "started_at", "completed_at"], [])
     write_csv(DEMO_SIM_ID, "submissions.csv",
@@ -111,8 +112,25 @@ def provision_demo() -> bool:
                "economic_value", "strategic_alignment", "relationship_preservation",
                "information_management", "composite_score", "round_scores_json", "scored_at"], [])
     write_csv(DEMO_SIM_ID, "leaderboard.csv",
-              ["rank", "user_id", "scenario_id", "average_score", "attempt_count", "percentile"], [])
+              ["rank", "user_id", "scenario_id", "activity_mode",
+               "average_score", "attempt_count", "percentile"], [])
     write_csv(DEMO_SIM_ID, "aliases.csv", ["user_id", "alias"], [])
+
+    # v1.2 — Groups, sessions, pairings, timers
+    write_csv(DEMO_SIM_ID, "groups.csv",
+              ["group_id", "sim_id", "name", "scenario_id", "created_by", "created_at"], [])
+    write_csv(DEMO_SIM_ID, "group_members.csv",
+              ["member_id", "group_id", "user_id", "is_lead", "joined_at"], [])
+    write_csv(DEMO_SIM_ID, "class_sessions.csv",
+              ["session_id", "sim_id", "scenario_id", "counterpart_mode",
+               "round_duration_seconds", "status", "current_round",
+               "created_by", "created_at", "started_at", "completed_at"], [])
+    write_csv(DEMO_SIM_ID, "session_pairings.csv",
+              ["pairing_id", "session_id", "student_group_id", "partner_group_id",
+               "counterpart_type", "status"], [])
+    write_csv(DEMO_SIM_ID, "round_timers.csv",
+              ["timer_id", "session_id", "round_number", "duration_seconds",
+               "started_at", "paused_at", "elapsed_before_pause"], [])
 
     logger.info("Demo simulation '%s' provisioned with 4 users.", DEMO_SIM_ID)
     return True

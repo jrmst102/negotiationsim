@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Response — Round {{ round_num }} — Class Session{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a> / {{ scenario.name }} / Class Session / Round {{ round_num }}
+    </div>
+    <h1>
+        {% if counterpart_type == "HUMAN" %}
+        Exchange Results — Round {{ round_num }}
+        {% else %}
+        Counterparty Response — Round {{ round_num }}
+        {% endif %}
+    </h1>
+    <p class="subtitle">
+        {% if role == "PARTNER_ROLE" %}Seller Role{% else %}Buyer Role{% endif %} &middot;
+        Group: {{ group.name }}
+    </p>
+</div>
+
+{% if remaining_seconds > 0 %}
+<div class="card" style="background:#f0f9ff;border-color:#bfdbfe;margin-bottom:16px;">
+    <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+        <span style="font-size:1.5rem;font-weight:700;color:#2563eb;" id="timer-display">
+            {{ "%d:%02d" | format(remaining_seconds // 60, remaining_seconds % 60) }}
+        </span>
+        <span style="color:#374151;">remaining in this round</span>
+    </div>
+</div>
+{% endif %}
+
+{% if counterpart_type == "HUMAN" %}
+<!-- HH Mode: Show term comparison -->
+<div class="card">
+    <div class="card-header">
+        <h2>Term Comparison</h2>
+    </div>
+    <div class="card-body">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Your Offer</th>
+                    <th>Partner's Offer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in term_fields %}
+                <tr>
+                    <td><strong>{{ field.label }}</strong></td>
+                    <td>{{ terms.get(field.key, "—") }}{% if field.unit %} <small>{{ field.unit }}</small>{% endif %}</td>
+                    <td>
+                        {% if ai_response.get("partner_terms") %}
+                        {{ ai_response.partner_terms.get(field.key, "—") }}{% if field.unit %} <small>{{ field.unit }}</small>{% endif %}
+                        {% elif ai_response.get("student_terms") %}
+                        {{ ai_response.student_terms.get(field.key, "—") }}{% if field.unit %} <small>{{ field.unit }}</small>{% endif %}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- AI Evaluation -->
+{% if ai_response.get("evaluation") %}
+<div class="card narrative-card">
+    <div class="card-header">
+        <h2>AI Evaluator's Assessment</h2>
+    </div>
+    <div class="card-body">
+        <blockquote class="ai-narrative">
+            {% for paragraph in ai_response.evaluation.split('\n\n') %}
+            {% if paragraph.strip() %}
+            <p>{{ paragraph }}</p>
+            {% endif %}
+            {% endfor %}
+        </blockquote>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- HA Mode: Show AI counterparty response (same as homework) -->
+<div class="deal-status deal-status-{{ ai_response.deal_status | default('FAR') | lower }}">
+    {% if ai_response.deal_status == "CLOSE" %}
+        Close to Agreement
+    {% elif ai_response.deal_status == "FAR" %}
+        Far Apart
+    {% elif ai_response.deal_status == "WALKAWAY_RISK" %}
+        Walkaway Risk
+    {% else %}
+        {{ ai_response.deal_status | default("Evaluating...") }}
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Term Evaluation</h2>
+    </div>
+    <div class="card-body">
+        <table class="terms-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Your Offer</th>
+                    <th>Status</th>
+                    <th>Counter</th>
+                    <th>Reasoning</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in term_fields %}
+                {% set term_eval = ai_response.terms.get(field.key, {}) if ai_response.terms else {} %}
+                <tr>
+                    <td class="term-name">{{ field.label }}</td>
+                    <td class="term-value">
+                        {{ terms.get(field.key, "—") }}
+                        {% if field.unit %}<small>{{ field.unit }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {% set status = term_eval.get("status", "counter") if term_eval else "counter" %}
+                        <span class="badge {% if status == 'accept' %}badge-success{% elif status == 'counter' %}badge-warning{% else %}badge-error{% endif %}">
+                            {{ status | capitalize }}
+                        </span>
+                    </td>
+                    <td class="term-counter">
+                        {% if term_eval.get("counter_value") is not none and term_eval.get("status") == "counter" %}
+                            {{ term_eval.counter_value }}
+                            {% if field.unit %}<small>{{ field.unit }}</small>{% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="term-reasoning">{{ term_eval.get("reasoning", "") if term_eval else "" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if ai_response.get("narrative") %}
+<div class="card narrative-card">
+    <div class="card-header">
+        <h2>Victoria Chen's Response</h2>
+    </div>
+    <div class="card-body">
+        <blockquote class="ai-narrative">
+            {% for paragraph in ai_response.narrative.split('\n\n') %}
+            {% if paragraph.strip() %}
+            <p>{{ paragraph }}</p>
+            {% endif %}
+            {% endfor %}
+        </blockquote>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Round Score Preview -->
+{% if round_score %}
+<div class="card score-preview">
+    <div class="card-header">
+        <h2>Round {{ round_num }} Score</h2>
+    </div>
+    <div class="card-body score-bars">
+        {% if role == "PARTNER_ROLE" %}
+        <div class="score-bar-group">
+            <label>Brand Protection (40%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.brand_protection | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.brand_protection | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Deal Economics (30%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.deal_economics | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.deal_economics | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Strategic Value (20%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.strategic_value | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.strategic_value | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Counterpart Mgmt (10%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.counterpart_management | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.counterpart_management | default(0)) }}</span>
+        </div>
+        {% else %}
+        <div class="score-bar-group">
+            <label>Economic Value (40%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.economic_value | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.economic_value | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Strategic Alignment (25%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.strategic_alignment | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.strategic_alignment | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Relationship (20%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.relationship_preservation | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.relationship_preservation | default(0)) }}</span>
+        </div>
+        <div class="score-bar-group">
+            <label>Information Mgmt (15%)</label>
+            <div class="progress-bar"><div class="progress-fill" style="width: {{ round_score.information_management | default(0) }}%"></div></div>
+            <span class="score-value">{{ "%.0f" | format(round_score.information_management | default(0)) }}</span>
+        </div>
+        {% endif %}
+        <div class="score-bar-group composite">
+            <label><strong>Composite</strong></label>
+            <div class="progress-bar"><div class="progress-fill progress-composite" style="width: {{ round_score.composite | default(0) }}%"></div></div>
+            <span class="score-value"><strong>{{ "%.0f" | format(round_score.composite | default(0)) }}</strong></span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="response-actions" style="margin-top:24px;">
+    <form method="POST" action="/session/{{ session_id }}/round/{{ round_num }}/close">
+        <input type="hidden" name="action" value="accept">
+        {% if current_session_round > round_num %}
+        <button type="submit" class="btn btn-primary btn-lg">Continue to Round {{ current_session_round }} →</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-lg">Done — Wait for Next Round</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if remaining_seconds > 0 %}
+<script>
+(function() {
+    var remaining = {{ remaining_seconds }};
+    var el = document.getElementById('timer-display');
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+    function tick() {
+        remaining--;
+        if (remaining <= 0) { el.textContent = '0:00'; el.style.color = '#ef4444'; return; }
+        el.textContent = fmt(remaining);
+        if (remaining <= 60) el.style.color = '#f59e0b';
+        setTimeout(tick, 1000);
+    }
+    setTimeout(tick, 1000);
+})();
+</script>
+{% endif %}
+{% endblock %}

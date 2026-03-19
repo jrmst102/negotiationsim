@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Session Control — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Session Control</h1>
+    <p class="subtitle">
+        Session <code>{{ class_session.session_id[:8] }}</code> &middot;
+        Status: <span class="badge {% if class_session.status == 'ACTIVE' %}badge-success{% elif class_session.status == 'COMPLETED' %}badge-default{% else %}badge-warning{% endif %}">{{ class_session.status }}</span>
+    </p>
+</div>
+
+<!-- Round & Timer -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number" id="current-round">{{ current_round }}</span>
+        <span class="stat-label">Current Round</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" id="timer-display">
+            {% if remaining_seconds > 0 %}
+            {{ "%d:%02d" | format(remaining_seconds // 60, remaining_seconds % 60) }}
+            {% else %}
+            —
+            {% endif %}
+        </span>
+        <span class="stat-label">Time Remaining
+            {% if timer and timer.paused_at %}<span class="badge badge-warning" style="margin-left:4px;">PAUSED</span>{% endif %}
+        </span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ pairings | length }}</span>
+        <span class="stat-label">Pairings</span>
+    </div>
+</div>
+
+<!-- Timer Controls -->
+{% if class_session.status == 'ACTIVE' %}
+<div class="card">
+    <div class="card-header">
+        <h2>Controls</h2>
+    </div>
+    <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
+        {% if timer and timer.paused_at %}
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/timer/resume">
+            <button type="submit" class="btn btn-primary">Resume Timer</button>
+        </form>
+        {% elif current_round > 0 %}
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/timer/pause">
+            <button type="submit" class="btn btn-warning">Pause Timer</button>
+        </form>
+        {% endif %}
+
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/timer/extend" class="inline-form" style="display:flex;gap:8px;align-items:center;">
+            <select name="extra_minutes" style="padding:6px 10px;">
+                <option value="2">+2 min</option>
+                <option value="5" selected>+5 min</option>
+                <option value="10">+10 min</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Extend</button>
+        </form>
+
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/advance">
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Advance to next round?')">
+                {% if current_round >= 3 %}End Session{% else %}Advance to Round {{ current_round + 1 }}{% endif %}
+            </button>
+        </form>
+
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/end">
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('End this session now?')">End Session</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pairing Status -->
+<div class="card">
+    <div class="card-header">
+        <h2>Submission Status — Round {{ current_round }}</h2>
+    </div>
+    <div class="card-body">
+        {% if pairings %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student Group</th>
+                    <th>Student Status</th>
+                    <th>vs</th>
+                    <th>Partner / AI</th>
+                    <th>Partner Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pairings %}
+                <tr>
+                    <td><strong>{{ p.student_group_name }}</strong></td>
+                    <td>
+                        {% if p.student_submitted %}
+                        <span class="badge badge-success">Submitted</span>
+                        {% else %}
+                        <span class="badge badge-warning">Waiting</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:center;color:#6b7280;">vs</td>
+                    <td>
+                        {% if p.counterpart_type == 'AI' %}
+                        <span class="badge badge-info">AI</span>
+                        {% else %}
+                        <strong>{{ p.partner_group_name }}</strong>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.counterpart_type == 'AI' %}
+                        <span class="badge badge-default">Auto</span>
+                        {% elif p.partner_submitted %}
+                        <span class="badge badge-success">Submitted</span>
+                        {% else %}
+                        <span class="badge badge-warning">Waiting</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#6b7280;">No pairings in this session.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if class_session.status == 'ACTIVE' %}
+<script>
+(function() {
+    var remaining = {{ remaining_seconds }};
+    var paused = {{ "true" if timer and timer.paused_at else "false" }};
+    var el = document.getElementById('timer-display');
+    if (!el || remaining <= 0) return;
+
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function tick() {
+        if (paused) return;
+        remaining--;
+        if (remaining <= 0) {
+            el.textContent = '0:00';
+            el.style.color = '#ef4444';
+            return;
+        }
+        el.textContent = fmt(remaining);
+        if (remaining <= 60) el.style.color = '#f59e0b';
+        setTimeout(tick, 1000);
+    }
+    setTimeout(tick, 1000);
+
+    // Auto-refresh status every 15 seconds
+    setInterval(function() {
+        fetch('/admin/sessions/{{ class_session.session_id }}/status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                remaining = data.remaining_seconds;
+                paused = data.paused;
+                el.textContent = remaining > 0 ? fmt(remaining) : '—';
+                document.getElementById('current-round').textContent = data.current_round;
+                if (data.status !== 'ACTIVE') location.reload();
+            }).catch(function(){});
+    }, 15000);
+})();
+</script>
+{% endif %}
+{% endblock %}

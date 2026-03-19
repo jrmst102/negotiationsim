@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Session Pairings — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Session Pairings</h1>
+    <p class="subtitle">
+        Session <code>{{ class_session.session_id[:8] }}</code> &middot;
+        Mode: <span class="badge badge-info">{{ class_session.counterpart_mode }}</span> &middot;
+        Status: <span class="badge {% if class_session.status == 'DRAFT' %}badge-warning{% else %}badge-success{% endif %}">{{ class_session.status }}</span>
+    </p>
+</div>
+
+<!-- Generate Pairings -->
+{% if class_session.status == 'DRAFT' %}
+<div class="card">
+    <div class="card-header">
+        <h2>Generate Pairings</h2>
+    </div>
+    <div class="card-body">
+        <p style="margin-bottom:12px;color:#6b7280;font-size:0.9rem;">
+            Auto-generate pairings from the {{ groups | length }} group(s) in scenario <strong>{{ class_session.scenario_id }}</strong>.
+            Mode: <strong>{{ class_session.counterpart_mode }}</strong>.
+        </p>
+        {% if groups | length < 2 and class_session.counterpart_mode == 'ALL_HH' %}
+        <p style="color:#ef4444;font-size:0.9rem;">
+            Human-Human mode requires at least 2 groups. Create more groups first.
+        </p>
+        {% else %}
+        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/generate-pairings">
+            <button type="submit" class="btn btn-primary">Generate Pairings</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Current Pairings -->
+<div class="card">
+    <div class="card-header">
+        <h2>Pairings ({{ pairings | length }})</h2>
+    </div>
+    <div class="card-body">
+        {% if pairings %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student Group (Buyer)</th>
+                    <th>vs</th>
+                    <th>Partner Group (Seller)</th>
+                    <th>Type</th>
+                    {% if class_session.status == 'DRAFT' %}
+                    <th>Change</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pairings %}
+                <tr>
+                    <td><strong>{{ p.student_group_name }}</strong></td>
+                    <td style="text-align:center;color:#6b7280;">vs</td>
+                    <td>
+                        {% if p.counterpart_type == 'AI' %}
+                        <span class="badge badge-info">AI (Victoria Chen)</span>
+                        {% else %}
+                        <strong>{{ p.partner_group_name }}</strong>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if p.counterpart_type == 'HUMAN' %}badge-success{% else %}badge-info{% endif %}">
+                            {{ p.counterpart_type }}
+                        </span>
+                    </td>
+                    {% if class_session.status == 'DRAFT' %}
+                    <td>
+                        <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/pairings/{{ p.pairing_id }}/update" class="inline-form" style="margin:0;">
+                            <select name="counterpart_type" onchange="this.form.submit()" style="font-size:0.85rem;padding:2px 6px;">
+                                <option value="HUMAN" {% if p.counterpart_type == 'HUMAN' %}selected{% endif %}>Human</option>
+                                <option value="AI" {% if p.counterpart_type == 'AI' %}selected{% endif %}>AI</option>
+                            </select>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#6b7280;">No pairings yet. Generate pairings above.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Start Session Button -->
+{% if class_session.status == 'DRAFT' and pairings | length > 0 %}
+<div style="margin-top:24px;display:flex;gap:12px;">
+    <form method="POST" action="/admin/sessions/{{ class_session.session_id }}/start">
+        <button type="submit" class="btn btn-primary btn-lg">Start Session</button>
+    </form>
+    <a href="/admin/sessions" class="btn btn-ghost btn-lg">Back</a>
+</div>
+{% else %}
+<div style="margin-top:24px;">
+    <a href="/admin/sessions" class="btn btn-ghost">Back to Sessions</a>
+</div>
+{% endif %}
+{% endblock %}
