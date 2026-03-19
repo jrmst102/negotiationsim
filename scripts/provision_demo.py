@@ -123,14 +123,14 @@ def provision_demo() -> bool:
               ["member_id", "group_id", "user_id", "is_lead", "joined_at"], [])
     write_csv(DEMO_SIM_ID, "class_sessions.csv",
               ["session_id", "sim_id", "scenario_id", "counterpart_mode",
-               "round_duration_seconds", "status", "current_round",
-               "created_by", "created_at", "started_at", "completed_at"], [])
+               "round_duration_minutes", "status", "current_round",
+               "created_by", "started_at", "completed_at", "created_at"], [])
     write_csv(DEMO_SIM_ID, "session_pairings.csv",
               ["pairing_id", "session_id", "student_group_id", "partner_group_id",
-               "counterpart_type", "status"], [])
+               "counterpart_type", "student_role", "partner_role"], [])
     write_csv(DEMO_SIM_ID, "round_timers.csv",
-              ["timer_id", "session_id", "round_number", "duration_seconds",
-               "started_at", "paused_at", "elapsed_before_pause"], [])
+              ["timer_id", "session_id", "round_number", "started_at",
+               "duration_seconds", "paused_at", "extended_seconds"], [])
 
     logger.info("Demo simulation '%s' provisioned with 4 users.", DEMO_SIM_ID)
     return True

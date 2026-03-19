@@ -1156,10 +1156,10 @@ async def session_waiting(request: Request, session_id: str, round_num: int):
                     _evaluate_hh_round(
                         sim_id, session_id, round_num, pairing, attempts, submissions,
                     )
-                    return RedirectResponse(
-                        url=f"/session/{session_id}/round/{round_num}/response",
-                        status_code=302,
-                    )
+                return RedirectResponse(
+                    url=f"/session/{session_id}/round/{round_num}/response",
+                    status_code=302,
+                )
 
     timer = get_timer(sim_id, session_id, round_num)
     remaining = get_remaining_seconds(timer) if timer else 0
