@@ -4,6 +4,7 @@ fastapi
 itsdangerous
 jinja2
 openai
+PyJWT
 python-dotenv
 python-multipart
 uvicorn[standard]
