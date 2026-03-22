@@ -2,7 +2,7 @@ node_modules/
 .venv/
 __pycache__/
 *.pyc
-data/
+/data/
 .env
 .env.local
 .env.*.local
