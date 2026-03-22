@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@jrmst102/auth-client": "^0.1.1",
-    "@jrmst102/shared-config": "^0.1.0",
-    "@jrmst102/ui-kit": "^0.1.1"
-  }
-}
