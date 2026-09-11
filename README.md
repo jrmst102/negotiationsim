@@ -97,9 +97,19 @@ cp .env.example .env
 python run.py
 ```
 
-The app starts at `http://localhost:8080`. No username or password is required. On first launch, the demo simulation and class roster are provisioned automatically, and opening the app enters the first active simulation as its instructor.
+The app starts at `http://localhost:8080`. No username or password is required. On first launch, the demo simulation is provisioned with synthetic instructors (`demo_admin`, `demo_admin_02`) and students (`demo_student_01` through `demo_student_26`). Opening the app enters the first active simulation as its instructor.
 
-Student identity can be supplied by DecisionLab through the `/auth/sso` endpoint. Without an SSO session, the application intentionally grants instructor access, so deploy it only in a trusted environment.
+Representative demo accounts use the username as the password:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `demo_admin` | `demo_admin` | Instructor |
+| `demo_student_01` | `demo_student_01` | Student |
+| `demo_student_02` | `demo_student_02` | Student |
+
+The remaining student accounts follow the same pattern through `demo_student_26`. Student identity can also be supplied by DecisionLab through the `/auth/sso` endpoint.
+
+> **Demo use only:** This application intentionally grants instructor access without authentication and uses public, predictable credentials. Do not deploy it with real users, sensitive data, or on an untrusted network.
 
 ### Environment Variables
 
