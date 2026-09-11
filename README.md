@@ -29,7 +29,7 @@ A web-based negotiation simulation for the MS in Integrated Marketing — Compet
 | Styling | Custom CSS |
 | Data | CSV files via storage abstraction |
 | AI | OpenAI GPT-4 Mini (`gpt-4o-mini`) |
-| Auth | bcrypt + itsdangerous signed session cookies |
+| Access | Automatic instructor access + DecisionLab SSO sessions |
 | Storage | DigitalOcean Spaces (S3) or local filesystem |
 | Deployment | DigitalOcean App Platform |
 
@@ -40,8 +40,8 @@ app/
 ├── ai/                  # OpenAI client, prompt templates
 │   ├── openai_client.py # AI counterpart + HH evaluator
 │   └── prompts.py       # System prompts, message builders
-├── auth/                # Authentication
-│   ├── login_manager.py # Multi-sim auth, session management
+├── auth/                # Simulation registry and managed-user passwords
+│   ├── login_manager.py # Active simulation registry helpers
 │   └── password_manager.py
 ├── core/                # Business logic
 │   ├── aliases.py       # Anonymous alias generation
@@ -59,7 +59,7 @@ web/
 ├── main.py              # FastAPI app, middleware, startup
 ├── routes/
 │   ├── admin_routes.py  # Admin dashboard, groups, sessions, control
-│   ├── auth_routes.py   # Login/logout, session cookies
+│   ├── auth_routes.py   # Automatic access and DecisionLab SSO sessions
 │   └── student_routes.py # Homework + class session flows
 ├── static/
 │   └── style.css
@@ -97,16 +97,9 @@ cp .env.example .env
 python run.py
 ```
 
-The app starts at `http://localhost:8080`. On first launch, a demo simulation is provisioned with:
+The app starts at `http://localhost:8080`. No username or password is required. On first launch, the demo simulation and class roster are provisioned automatically, and opening the app enters the first active simulation as its instructor.
 
-| User | Password | Role |
-|------|----------|------|
-| professor | Secret123! | Admin |
-| student1 | student1 | Student |
-| student2 | student2 | Student |
-| student3 | student3 | Student |
-
-Simulation code: `demo`
+Student identity can be supplied by DecisionLab through the `/auth/sso` endpoint. Without an SSO session, the application intentionally grants instructor access, so deploy it only in a trusted environment.
 
 ### Environment Variables
 

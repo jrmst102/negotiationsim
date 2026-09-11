@@ -1,8 +1,8 @@
 """
 Negotiation Simulation — Unified FastAPI entry point.
 ======================================================
-Single app serving student and admin dashboards behind
-a shared login page.
+Single app serving student and admin dashboards with automatic
+instructor access and optional DecisionLab SSO.
 
 Run::
 
@@ -82,14 +82,14 @@ app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 # ── Admin guard middleware ────────────────────────────────────────────
 
 class AdminGuardMiddleware(BaseHTTPMiddleware):
-    """Redirect unauthenticated users away from /admin routes."""
+    """Redirect non-admin users away from /admin routes."""
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         if path.startswith("/admin"):
             session = get_session(request)
             if not session or session.get("role") != "ADMIN":
-                return RedirectResponse(url="/login", status_code=302)
+                return RedirectResponse(url="/", status_code=302)
         return await call_next(request)
 
 

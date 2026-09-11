@@ -1,6 +1,6 @@
 """
-Auth routes — login, logout, session management, SSO.
-======================================================
+Access routes — automatic admin sessions and DecisionLab SSO.
+=============================================================
 """
 
 from __future__ import annotations
@@ -8,13 +8,13 @@ from __future__ import annotations
 import logging
 import os
 import uuid
-from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
 from itsdangerous import URLSafeSerializer
 
 import jwt
 
-from app.auth.login_manager import login, get_active_simulation_ids
+from app.auth.login_manager import get_active_simulation_ids
 from app.auth.password_manager import hash_password
 from app.data.csv_manager import read_csv_rows, write_csv, csv_exists
 
@@ -28,14 +28,29 @@ _signer = URLSafeSerializer(SESSION_SECRET, salt="neg-session")
 
 
 def get_session(request: Request) -> dict | None:
-    """Read and verify the session cookie."""
+    """Read a signed SSO session or provide the active simulation's admin."""
     raw = request.cookies.get(COOKIE_NAME)
-    if not raw:
-        return None
-    try:
-        return _signer.loads(raw)
-    except Exception:
-        return None
+    if raw:
+        try:
+            return _signer.loads(raw)
+        except Exception:
+            pass
+
+    for sim_id in get_active_simulation_ids():
+        if not csv_exists(sim_id, "users.csv"):
+            continue
+        for user in read_csv_rows(sim_id, "users.csv"):
+            if user.get("role", "").upper() == "ADMIN":
+                return {
+                    "username": user.get("username", ""),
+                    "user_id": user.get("user_id", ""),
+                    "role": "ADMIN",
+                    "sim_id": sim_id,
+                    "first_name": user.get("first_name", ""),
+                    "last_name": user.get("last_name", ""),
+                    "dashboard": "admin",
+                }
+    return None
 
 
 def set_session_cookie(response, session_data: dict):
@@ -51,62 +66,19 @@ def set_session_cookie(response, session_data: dict):
     return response
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/")
 async def root(request: Request):
     session = get_session(request)
     if session:
         if session.get("role") == "ADMIN":
             return RedirectResponse(url="/admin", status_code=302)
         return RedirectResponse(url="/dashboard", status_code=302)
-    return RedirectResponse(url="/login", status_code=302)
+    return RedirectResponse(url="/admin", status_code=302)
 
 
-@router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    from web.main import templates
-    session = get_session(request)
-    if session:
-        return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "error": None,
-    })
-
-
-@router.post("/login")
-async def login_submit(request: Request, username: str = Form(...), password: str = Form(...)):
-    from web.main import templates
-    result = login(username, password)
-    if not result.success:
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": result.message,
-        })
-
-    user = result.user
-    session_data = {
-        "username": user.username,
-        "user_id": user.user_id,
-        "role": user.role,
-        "sim_id": user.sim_id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "dashboard": user.dashboard,
-    }
-
-    if user.dashboard == "admin":
-        response = RedirectResponse(url="/admin", status_code=302)
-    else:
-        response = RedirectResponse(url="/dashboard", status_code=302)
-
-    return set_session_cookie(response, session_data)
-
-
-@router.get("/logout")
-async def logout(request: Request):
-    response = RedirectResponse(url="/login", status_code=302)
-    response.delete_cookie(COOKIE_NAME)
-    return response
+@router.get("/login")
+async def legacy_login_redirect():
+    return RedirectResponse(url="/", status_code=302)
 
 
 # ── SSO from DecisionLab ──────────────────────────────────────────────
